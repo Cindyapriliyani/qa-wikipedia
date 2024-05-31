@@ -1,0 +1,12 @@
+# flask
+# transformers
+# torch
+
+
+py_cpuinfo==8.0.0
+transformers==4.30.0
+torch==1.13.1
+tqdm==4.61.2
+numpy==1.22.0
+datasets==1.9.0
+pandas==1.3.0

@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\WikipediaQAController;
-
+use App\Http\Controllers\QuestionAnsweringController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -19,8 +19,13 @@ Route::get('/', function () {
     return view('home');
 });
 
+Route::post('/ask-question', 'QuestionAnsweringController@askQuestion');
+
 Route::get('/qa', [WikipediaQAController::class, 'index']);
 Route::post('/qa', [WikipediaQAController::class, 'process']);
+
+
+Route::post('/qa/answer', [QuestionAnsweringController::class, 'answer']);
 
 
 
