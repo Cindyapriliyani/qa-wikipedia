@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
@@ -7,15 +8,25 @@
     <meta name="author" content="" />
     <title>Sistem QA Dokumen Wikipedia</title>
     <!-- Favicon-->
-    <link rel="icon" type="image/x-icon" href="https://upload.wikimedia.org/wikipedia/commons/8/80/Wikipedia-logo-v2.svg" />
+    <link rel="icon" type="image/x-icon"
+        href="https://upload.wikimedia.org/wikipedia/commons/8/80/Wikipedia-logo-v2.svg" />
 
     <!-- Bootstrap icons-->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet"
+        type="text/css" />
     <!-- Google fonts-->
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet"
+        type="text/css" />
     <!-- Core theme CSS (includes Bootstrap)-->
     <link href="{{ asset('template/css/styles.css') }}" rel="stylesheet" />
+    <style>
+        .warning {
+            border-color: red !important;
+        }
+        
+    </style>
 </head>
+
 <body>
     <!-- Navigation-->
     <nav class="navbar navbar-light bg-light static-top">
@@ -29,7 +40,8 @@
     <!-- Masthead-->
     <header class="masthead" style="background-color: #007bff; padding-bottom: 100px;">
         <div class="container position-relative">
-            <div class="row justify-content-center align-items-center"> <!-- Menggunakan flexbox untuk menyusun input dan tombol -->
+            <div class="row justify-content-center align-items-center">
+                <!-- Menggunakan flexbox untuk menyusun input dan tombol -->
                 <div class="col-xl-6">
                     <div class="text-center text-white">
                         <!-- Page heading-->
@@ -39,10 +51,17 @@
                             <div class="container">
                                 <div class="row">
                                     <div class="col">
-                                        <input class="form-control form-control-lg" id="topik" type="text" placeholder="Tulis kata kunci" style="margin-bottom: 20px; width: 105%;" autofocus />
+                                        <input class="form-control form-control-lg" id="topik" type="text"
+                                            placeholder="Tulis kata kunci" style="margin-bottom: 20px; width: 105%;"
+                                            autofocus />
+                                            <div id="topikWarning" class="text-danger"></div>
                                     </div>
+                                    
                                     <div class="col-auto" style="margin-left: 10px;">
-                                        <button class="btn btn-primary btn-lg" id="searchButton" type="button" style="background-color: #007bff;">Cari</button>
+                                        <button class="btn btn-primary btn-lg" id="searchButton" type="button"
+                                            style="background-color: #007bff;">Cari
+                                            <span id="searchSpinner" class="loading-spinner" style="display: none;"></span>
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -57,10 +76,16 @@
                                 </div>
                                 <div class="row mt-4">
                                     <div class="col">
-                                        <input class="form-control form-control-lg" id="pertanyaan" type="text" placeholder="Pertanyaan" disabled />
+                                        <input class="form-control form-control-lg" id="pertanyaan" type="text"
+                                            placeholder="Pertanyaan"  style="margin-bottom: 20px; width: 105%;"
+                                        disabled/>
+                                
                                     </div>
                                     <div class="col-auto" style="margin-left: 10px;">
-                                        <button class="btn btn-primary btn-lg" id="answerButton" type="button" style="background-color: #007bff;" disabled>Jawab</button>
+                                        <button class="btn btn-primary btn-lg" id="answerButton" type="button"
+                                        style="background-color: #007bff;">Jawab
+                                        <span id="answerSpinner" class="loading-spinner" style="display: none;"></span>
+                                    </button>
                                     </div>
                                 </div>
                                 <div class="row mt-4">
@@ -80,134 +105,6 @@
             </div>
         </div>
     </header>
-
-    <script>
-        async function fetchDescription(topic) {
-            try {
-                const response = await fetch(`https://id.wikipedia.org/api/rest_v1/page/html/${topic}`);
-                const html = await response.text();
-                const description = extractTextFromHtml(html);
-                if (description.trim() === '') {
-                    return "Deskripsi tidak tersedia untuk topik ini.";
-                }
-                return description;
-            } catch (error) {
-                console.error('Error fetching description:', error);
-                return "Terjadi kesalahan saat mengambil deskripsi.";
-            }
-        }
-
-        function extractTextFromHtml(html) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const paragraphs = doc.querySelectorAll('p');
-            let description = '';
-            paragraphs.forEach(paragraph => {
-                description += paragraph.textContent.trim() + '\n';
-            });
-            return description;
-        }
-        
-
-        async function handleSearch() {
-            const topic = document.getElementById('topik').value;
-            const deskripsiElement = document.getElementById('deskripsi');
-            deskripsiElement.value = ''; // Clear previous content
-
-            if (topic.trim() === '') {
-                alert('Mohon masukkan topik terlebih dahulu!');
-                return; // Stop further execution
-            }
-            
-             // Clear the question and answer fields
-            document.getElementById('pertanyaan').value = '';
-            document.getElementById('jawaban').value = '';
-
-            const description = await fetchDescription(topic);
-            deskripsiElement.value = description;
-
-            // Enable the question input field
-            document.getElementById('pertanyaan').removeAttribute('disabled');
-            // Set focus to the question input field
-            document.getElementById('pertanyaan').focus();
-            document.getElementById('answerButton').removeAttribute('disabled');
-        }
-
-
-        async function answerQuestion() {
-            const question = document.getElementById('pertanyaan').value;
-            const context = document.getElementById('deskripsi').value;
-
-            const response = await fetch('http://localhost:5000/api/answer', { 
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN' : '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ question, context }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-        }
-            const data = await response.json();
-            const jawabanElement = document.getElementById('jawaban');
-            jawabanElement.value = data.answer || "Maaf, saya tidak bisa menemukan jawaban atas pertanyaan Anda dalam deskripsi tersebut.";
-        }
-
-        document.getElementById('searchButton').addEventListener('click', handleSearch);
-        document.getElementById('topik').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                handleSearch();
-                this.blur();
-            }
-        });
-        document.getElementById('pertanyaan').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                answerQuestion();
-                this.blur();
-            }
-        });
-        document.getElementById('answerButton').addEventListener('click', answerQuestion);
-
-        function findAnswerInDescription(question, description) {
-            const sentences = description.split('.');
-            for (let i = 0; i < sentences.length; i++) {
-                const sentence = sentences[i].trim();
-                if (sentence.includes(question)) {
-                    return sentence;
-                }
-            }
-            return '';
-        }
-
-        function answerQuestion() {
-            const question = document.getElementById('pertanyaan').value.toLowerCase();
-            const description = document.getElementById('deskripsi').value.toLowerCase();
-            const answer = findAnswerInDescription(question, description);
-            const jawabanElement = document.getElementById('jawaban');
-            jawabanElement.value = answer || "Maaf, saya tidak bisa menemukan jawaban atas pertanyaan Anda dalam deskripsi tersebut.";
-        }
-
-        document.getElementById('searchButton').addEventListener('click', handleSearch);
-        document.getElementById('topik').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                handleSearch();
-                this.blur();
-            }
-        });
-        document.getElementById('pertanyaan').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                answerQuestion();
-                this.blur();
-            }
-        });
-        document.getElementById('answerButton').addEventListener('click', answerQuestion);
-    </script>
 
     <!-- Icons Grid-->
     <section class="features-icons bg-light text-center">
@@ -241,29 +138,42 @@
     <section class="showcase">
         <div class="container-fluid p-0">
             <div class="row g-0">
-                <div class="col-lg-6 order-lg-2 text-white showcase-img" style="background-image: url('{{ asset('template/assets/img/bg-showcase-1.jpg') }}');"></div>
+                <div class="col-lg-6 order-lg-2 text-white showcase-img"
+                    style="background-image: url('{{ asset('template/assets/img/bg-showcase-1.jpg') }}');"></div>
                 <div class="col-lg-6 order-lg-1 my-auto showcase-text">
                     <h2>Sistem QA Dokumen Wikipedia</h2>
-                    <p class="lead mb-0">Situs web ini merupakan sumber informasi yang menyediakan konten yang sama dengan yang terdapat di Wikipedia. Dengan akses ke berbagai topik dan artikel yang luas, pengguna dapat dengan mudah menemukan informasi yang mereka butuhkan tanpa harus langsung mengunjungi situs Wikipedia itu sendiri. Hal ini memudahkan pengguna dalam mencari referensi dan pengetahuan tentang berbagai topik, serta meningkatkan keterbukaan dan aksesibilitas informasi bagi semua orang.</p>
+                    <p class="lead mb-0">Situs web ini merupakan sumber informasi yang menyediakan konten yang sama
+                        dengan yang terdapat di Wikipedia. Dengan akses ke berbagai topik dan artikel yang luas,
+                        pengguna dapat dengan mudah menemukan informasi yang mereka butuhkan tanpa harus langsung
+                        mengunjungi situs Wikipedia itu sendiri. Hal ini memudahkan pengguna dalam mencari referensi dan
+                        pengetahuan tentang berbagai topik, serta meningkatkan keterbukaan dan aksesibilitas informasi
+                        bagi semua orang.</p>
                 </div>
             </div>
             <div class="row g-0">
-                <div class="col-lg-6 text-white showcase-img" style="background-image: url('{{ asset('template/assets/img/bg-showcase-2.jpg') }}');"></div>
+                <div class="col-lg-6 text-white showcase-img"
+                    style="background-image: url('{{ asset('template/assets/img/bg-showcase-2.jpg') }}');"></div>
                 <div class="col-lg-6 my-auto showcase-text">
                     <h2>Informasi/Jawaban Secara Presisi</h2>
-                    <p class="lead mb-0">Dapat memperoleh informasi atau jawaban secara presisi. Fitur-fitur pencarian yang canggih dan sumber informasi yang terpercaya memastikan bahwa pengguna dapat menemukan informasi yang akurat dan terverifikasi dengan cepat.</p>
+                    <p class="lead mb-0">Dapat memperoleh informasi atau jawaban secara presisi. Fitur-fitur pencarian
+                        yang canggih dan sumber informasi yang terpercaya memastikan bahwa pengguna dapat menemukan
+                        informasi yang akurat dan terverifikasi dengan cepat.</p>
                 </div>
             </div>
             <div class="row g-0">
-                <div class="col-lg-6 order-lg-2 text-white showcase-img" style="background-image: url('{{ asset('template/assets/img/bg-showcase-3.jpg') }}');"></div>
+                <div class="col-lg-6 order-lg-2 text-white showcase-img"
+                    style="background-image: url('{{ asset('template/assets/img/bg-showcase-3.jpg') }}');"></div>
                 <div class="col-lg-6 order-lg-1 my-auto showcase-text">
                     <h2>Mudah Digunakan</h2>
-                    <p class="lead mb-0">Website ini dirancang dengan antarmuka yang sederhana dan intuitif, sehingga mudah digunakan oleh siapa pun, baik pengguna baru maupun berpengalaman. Fitur-fitur navigasi yang jelas dan struktur yang terorganisir dengan baik memungkinkan pengguna untuk dengan cepat menemukan informasi yang mereka butuhkan tanpa mengalami kesulitan.</p>
+                    <p class="lead mb-0">Website ini dirancang dengan antarmuka yang sederhana dan intuitif, sehingga
+                        mudah digunakan oleh siapa pun, baik pengguna baru maupun berpengalaman. Fitur-fitur navigasi
+                        yang jelas dan struktur yang terorganisir dengan baik memungkinkan pengguna untuk dengan cepat
+                        menemukan informasi yang mereka butuhkan tanpa mengalami kesulitan.</p>
                 </div>
             </div>
         </div>
     </section><br><br>
-    
+
     <!-- Call to Action-->
     <section class="call-to-action text-white text-center" id="signup">
         <div class="container position-relative">
@@ -288,7 +198,8 @@
                         <li class="list-inline-item">⋅</li>
                         <li class="list-inline-item"><a href="#!">Privacy Policy</a></li>
                     </ul>
-                    <p class="text-muted small mb-4 mb-lg-0">&copy; Sistem QA Dokumen Wikipedia 2024. All Rights Reserved.</p>
+                    <p class="text-muted small mb-4 mb-lg-0">&copy; Sistem QA Dokumen Wikipedia 2024. All Rights
+                        Reserved.</p>
                 </div>
                 <div class="col-lg-6 h-100 text-center text-lg-end my-auto">
                     <ul class="list-inline mb-0">
@@ -311,5 +222,133 @@
     <!-- Core theme JS-->
     <script src="{{ asset('template/js/scripts.js') }}"></script>
     <script src="https://cdn.startbootstrap.com/sb-forms-latest.js"></script>
+
+
+    <script type="text/javascript">
+        document.getElementById("searchButton").addEventListener("click", searchTopic);
+        document.getElementById("topik").addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                searchTopic();
+                document.getElementById('topik').blur();
+            }
+        });
+    
+        document.getElementById("answerButton").addEventListener("click", getAnswer);
+        document.getElementById("pertanyaan").addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                getAnswer();
+                document.getElementById('pertanyaan').blur();
+            }
+        });
+    
+        function searchTopic() {
+            const topic = document.getElementById('topik').value;
+            const descriptionTextarea = document.getElementById('deskripsi');
+            const questionInput = document.getElementById('pertanyaan');
+            const answerButton = document.getElementById('answerButton');
+            const searchSpinner = document.getElementById('searchSpinner');
+    
+            if (!topic) {
+                document.getElementById('topik').placeholder = 'Mohon masukkan topik!';
+                document.getElementById('topik').classList.add('warning');
+                return;
+            } else {
+                document.getElementById('topik').placeholder = 'Tulis kata kunci';
+                document.getElementById('topik').classList.remove('warning');
+            }
+    
+            descriptionTextarea.value = 'Loading...';
+            searchSpinner.style.display = 'inline-block';
+    
+            const url = `https://id.wikipedia.org/api/rest_v1/page/html/${topic}`;
+    
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(htmlContent => {
+                    const description = extractTextFromHtml(htmlContent);
+                    descriptionTextarea.value = description;
+    
+                    questionInput.disabled = false;
+                    answerButton.disabled = false;
+                })
+                .catch(error => {
+                    descriptionTextarea.value = 'Error fetching data: ' + error.message;
+                })
+                .finally(() => {
+                    searchSpinner.style.display = 'none';
+                });
+    
+            // Clear the question and answer fields when topic changes
+            document.getElementById('pertanyaan').value = '';
+            document.getElementById('jawaban').value = '';
+            questionInput.disabled = true;
+            answerButton.disabled = true;
+        }
+    
+        function getAnswer() {
+            const context = document.getElementById('deskripsi').value;
+            const question = document.getElementById('pertanyaan').value;
+            const answerTextarea = document.getElementById('jawaban');
+            const answerSpinner = document.getElementById('answerSpinner');
+            const pertanyaanWarning = document.getElementById('pertanyaanWarning');
+    
+            if (!question) {
+                document.getElementById('pertanyaan').placeholder = 'Mohon masukkan pertanyaan!';
+                document.getElementById('pertanyaan').classList.add('warning');
+                return;
+            } else {
+                document.getElementById('pertanyaan').placeholder = 'Pertanyaan';
+                document.getElementById('pertanyaan').classList.remove('warning');
+            }
+            
+            answerTextarea.value = 'Loading...';
+            answerSpinner.style.display = 'inline-block';
+    
+            fetch('http://127.0.0.1:5000/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    context: context,
+                    question: question
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(result => {
+                answerTextarea.value = result.answer || 'No answer found';
+            })
+            .catch(error => {
+                answerTextarea.value = 'Error fetching data: ' + error.message;
+            })
+            .finally(() => {
+                answerSpinner.style.display = 'none';
+            });
+        }
+    
+        function extractTextFromHtml(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const paragraphs = doc.querySelectorAll('p');
+            let description = '';
+            paragraphs.forEach(paragraph => {
+                description += paragraph.textContent.trim() + '\n';
+            });
+            return description;
+        }
+    </script>
 </body>
+
 </html>

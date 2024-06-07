@@ -19,13 +19,18 @@ Route::get('/', function () {
     return view('home');
 });
 
+Route::get('/', [HomeController::class, 'index']);
+
+
+
+
 Route::post('/ask-question', 'QuestionAnsweringController@askQuestion');
 
 Route::get('/qa', [WikipediaQAController::class, 'index']);
 Route::post('/qa', [WikipediaQAController::class, 'process']);
 
 
-Route::post('/qa/answer', [QuestionAnsweringController::class, 'answer']);
+Route::post('/get-answer', [QuestionAnsweringController::class, 'getAnswer']);
 
 
 

@@ -4,24 +4,29 @@ namespace App\Http\Controllers;
 
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use routes\QuestionAnsweringApi;
 
 class QuestionAnsweringController extends Controller
 {
-    public function answer(Request $request)
+    public function getAnswer(Request $request)
     {
-        $question = $request->input('question');
-        $context = $request->input('context');
-
-        $client = new \GuzzleHttp\Client();
-        $response = $client->post('http://localhost:5000/api/answer', [
-            'json' => [
-                'question' => $question,
-                'context' => $context,
-            ]
+        //validasi input
+        $request->validate([
+            'question' => 'required|string',
+            'keyword' => 'required|string',
         ]);
 
-        $data = json_decode($response->getBody(), true);
-        return response()->json(['answer' => $data['answer']]);
+        // mengirim permintaan ke API FastAPI
+        $response = Http::post('http://127.0.0.1:8000/predict/', [
+            'question' => $request->input('question'),
+            'keyword' => $request->input('keyword'),
+        ]);
+
+        // mengambil data jawaban dari API
+        $data = $response->json();
+
+        //mengembalikan view dengan jawaban
+        return view('home', ['answer' => $data['answer'], 'context' => $data['context']]);
     }
 }

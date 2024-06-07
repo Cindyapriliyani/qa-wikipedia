@@ -1,26 +1,40 @@
-from flask import Flask, request, jsonify
-from transformers import BertTokenizer, BertForQuestionAnswering
-import torch
+from flask import Flask, request, render_template, jsonify
 import wikipediaapi
+from transformers import pipeline
+import torch
 
 app = Flask(__name__)
 
-tokenizer = BertTokenizer.from_pretrained("indobenchmark/indobert-large-p1")
-model = BertForQuestionAnswering.from_pretrained("indobenchmark/indobert-large-p1")
+#inisialisasi pipeline QA dengan model IndoBERT
+qa_pipeline = pipeline(
+    "question-answering",
+    model="Rifky/Indobert-QA",
+    tokenizer="Rifky/Indobert-QA"
+)
 
-@app.route('/api/answer', methods=['POST'])
-def answer():
-    data = request.json
-    question = data['question']
-    context = data['context']
+#inisialisasi wikipedia api
+wiki_wiki = wikipediaapi.Wikipedia('id')
 
-    inputs = tokenizer(question, context, return_tensors='pt')
-    outputs = model(**inputs)
-    answer_start_index = torch.argmax(outputs.start_logits)
-    answer_end_index = torch.argmax(outputs.end_logits) + 1
-    answer = tokenizer.convert_tokens_to_string(tokenizer.convert_ids_to_tokens(inputs.input_ids[0][answer_start_index:answer_end_index]))
-
-    return jsonify({'answer' : answer})
-
-if _name_ == '_main_':
-    app.run(port=5000)
+@app.route("/", methods=["GET", "POST"])
+def index():
+    context = ""
+    question = ""
+    answer = ""
+    if request.method == "POST":
+        keyword = request.form["keyword"]
+        question = request.form["question"]
+        page = wiki_wiki.page(keyword)
+        if page.exists():
+            context = page.text[:2000] # mengambil 2000 karakter pertama dari artikel wikipedia
+            result = qa_pipeline({
+                'context': context,
+                'question': question
+            })
+            answer = result["answer"]
+        else:
+            context = "Artikel tidak ditemukan di Wikipedia."
+            answer = "Tidak ada jawaban karena artikel tidak ditemukan."
+        return render_template("index.html", keyword=keyword, context=context, question=question, answer=answer)
+    
+    if __name__ == "__main__":
+        app.run(debug=True)
